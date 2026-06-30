@@ -1,11 +1,17 @@
 from RF24 import *
 import time
 
+print("Creando radio...")
+
 radio = RF24(22, 0)
 
+print("Llamando a begin()...")
+
 if not radio.begin():
-    print("Error NRF")
-    exit()
+    print("No se pudo inicializar el NRF24")
+    quit()
+
+print("NRF24 detectado")
 
 radio.setChannel(76)
 radio.setDataRate(RF24_1MBPS)
@@ -16,12 +22,16 @@ direccion = b"TX_01"
 radio.openWritingPipe(direccion)
 radio.stopListening()
 
+radio.printPrettyDetails()
+
+print("Comenzando transmisión...")
+
 while True:
 
-    radio.write(
-        b"Hola mundo"
+    ok = radio.write(
+        b"Hola"
     )
 
-    print("Enviado")
+    print("ACK:", ok)
 
     time.sleep(1)
