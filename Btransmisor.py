@@ -23,7 +23,7 @@ radio = RF24(22, 0)
 
 if not radio.begin():
     raise RuntimeError(
-        "NRF24 no encontrado"
+        "No se pudo inicializar NRF24"
     )
 
 radio.setChannel(76)
@@ -62,7 +62,7 @@ def transmitir_archivo(nombre):
 
     global parpadeando
 
-    with open(nombre, 'rb') as f:
+    with open(nombre, "rb") as f:
         datos = f.read()
 
     paquetes = fragmentacion.fragmentar(
@@ -77,8 +77,6 @@ def transmitir_archivo(nombre):
         f"Enviando {cantidad} paquetes"
     )
 
-    apagar_todos()
-
     parpadeando = True
     hilo = threading.Thread(
         target=parpadear_todos
@@ -89,7 +87,7 @@ def transmitir_archivo(nombre):
         paquetes_binarios.serializar_start(
             tamano,
             cantidad
-        )
+        ).ljust(32, b'\0')
     )
 
     time.sleep(0.05)
@@ -102,15 +100,22 @@ def transmitir_archivo(nombre):
                 paquete['datos']
             )
 
-        radio.write(
+        ok = radio.write(
             datos_serializados.ljust(
                 32,
                 b'\0'
             )
         )
 
+        if not ok:
+            print(
+                f"Error paquete "
+                f"{paquete['id']}"
+            )
+
     radio.write(
-        paquetes_binarios.serializar_end()
+        paquetes_binarios.serializar_end(
+        ).ljust(32, b'\0')
     )
 
     parpadeando = False
@@ -121,8 +126,6 @@ def transmitir_archivo(nombre):
 
     apagar_todos()
     led_verde.on()
-
-    print("Transmisión terminada")
 
 
 def iniciar_grabacion():
