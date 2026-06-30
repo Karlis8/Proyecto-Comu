@@ -27,7 +27,7 @@ radio = RF24(17, 8)
 
 if not radio.begin():
     raise RuntimeError(
-        "NRF24 no encontrado"
+        "No se pudo inicializar NRF24"
     )
 
 radio.setChannel(76)
@@ -46,6 +46,7 @@ radio.startListening()
 
 paquetes = []
 cantidad_esperada = 0
+tamano_archivo = 0
 recolectando = False
 
 ultimo_parpadeo = time.time()
@@ -86,9 +87,15 @@ try:
                     )
 
                 paquetes = []
+
                 cantidad_esperada = \
                     info[
                         'cantidad_paquetes'
+                    ]
+
+                tamano_archivo = \
+                    info[
+                        'tamano_archivo'
                     ]
 
                 recolectando = True
@@ -101,7 +108,7 @@ try:
                 print(
                     f"Recibiendo "
                     f"{cantidad_esperada} "
-                    f"paquetes"
+                    f" paquetes"
                 )
 
             elif tipo == \
@@ -128,6 +135,17 @@ try:
                     GPIO.LOW
                 )
 
+                if len(paquetes) != \
+                        cantidad_esperada:
+
+                    print(
+                        f"Error: "
+                        f"{len(paquetes)}/"
+                        f"{cantidad_esperada}"
+                    )
+
+                    continue
+
                 for _ in range(6):
                     GPIO.output(
                         LED_VERDE,
@@ -145,6 +163,9 @@ try:
                         paquetes
                     )
 
+                audio = \
+                    audio[:tamano_archivo]
+
                 nombre = \
                     "/tmp/audio.wav"
 
@@ -159,12 +180,12 @@ try:
                     GPIO.HIGH
                 )
 
-                subprocess.run(
-                    [
-                        "aplay",
-                        nombre
-                    ]
-                )
+                subprocess.run([
+                    "aplay",
+                    "-D",
+                    "plughw:1,0",
+                    nombre
+                ])
 
                 GPIO.output(
                     LED_VERDE,
