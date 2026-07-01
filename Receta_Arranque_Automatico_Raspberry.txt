@@ -1,0 +1,139 @@
+
+====================================================
+RECETA - ARRANQUE AUTOMÁTICO DEL SISTEMA DE AUDIO
+====================================================
+
+OBJETIVO
+---------
+Al alimentar las dos Raspberry Pi:
+
+- La Raspberry transmisora ejecuta automáticamente transmisor.py
+- La Raspberry receptora ejecuta automáticamente receptor.py
+
+----------------------------------------------------
+1. VERIFICAR QUE LOS PROGRAMAS FUNCIONAN MANUALMENTE
+----------------------------------------------------
+
+Transmisor:
+python3 /home/pi/audio_rf/transmisor.py
+
+Receptor:
+python3 /home/pi/audio_rf/receptor.py
+
+----------------------------------------------------
+2. CREAR EL SERVICIO DEL TRANSMISOR
+----------------------------------------------------
+
+sudo nano /etc/systemd/system/transmisor.service
+
+Contenido:
+
+[Unit]
+Description=Sistema de Transmision de Audio
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/audio_rf
+ExecStart=/usr/bin/python3 /home/pi/audio_rf/transmisor.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+Guardar:
+CTRL+O
+ENTER
+CTRL+X
+
+----------------------------------------------------
+3. CREAR EL SERVICIO DEL RECEPTOR
+----------------------------------------------------
+
+sudo nano /etc/systemd/system/receptor.service
+
+Contenido:
+
+[Unit]
+Description=Sistema de Recepcion de Audio
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/audio_rf
+ExecStart=/usr/bin/python3 /home/pi/audio_rf/receptor.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+Guardar:
+CTRL+O
+ENTER
+CTRL+X
+
+----------------------------------------------------
+4. RECARGAR SYSTEMD
+----------------------------------------------------
+
+sudo systemctl daemon-reload
+
+----------------------------------------------------
+5. HABILITAR EL ARRANQUE AUTOMÁTICO
+----------------------------------------------------
+
+Transmisora:
+sudo systemctl enable transmisor.service
+
+Receptora:
+sudo systemctl enable receptor.service
+
+----------------------------------------------------
+6. INICIAR LOS SERVICIOS
+----------------------------------------------------
+
+sudo systemctl start transmisor.service
+sudo systemctl start receptor.service
+
+----------------------------------------------------
+7. VERIFICAR QUE ESTÁN CORRIENDO
+----------------------------------------------------
+
+sudo systemctl status transmisor.service
+sudo systemctl status receptor.service
+
+Debe aparecer:
+
+Active: active (running)
+
+----------------------------------------------------
+8. VER MENSAJES DE DEPURACIÓN
+----------------------------------------------------
+
+journalctl -u transmisor.service -f
+journalctl -u receptor.service -f
+
+----------------------------------------------------
+9. PRUEBA FINAL
+----------------------------------------------------
+
+sudo shutdown now
+
+Desconectar la alimentación.
+Volver a energizar las Raspberry.
+Esperar unos 30 segundos y comprobar que todo inicia solo.
+
+----------------------------------------------------
+IMPORTANTE
+----------------------------------------------------
+
+NO ejecutar:
+
+sudo systemctl disable transmisor.service
+sudo systemctl disable receptor.service
+
+a menos que quieras eliminar el arranque automático.
+
+Para el proyecto solo debes realizar los pasos 1 al 9.
