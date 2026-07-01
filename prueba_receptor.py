@@ -25,7 +25,7 @@ while True:
     if radio.available():
 
         datos = bytes(radio.read(32))
-        datos = datos.rstrip(b'\0')
+       
 
         if datos.startswith(b"START"):
 
