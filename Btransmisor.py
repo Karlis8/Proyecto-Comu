@@ -27,7 +27,7 @@ if not radio.begin():
     )
 
 radio.setChannel(76)
-radio.setDataRate(RF24_1MBPS)
+radio.setDataRate(RF24_250KBPS)
 radio.setPALevel(RF24_PA_HIGH)
 radio.setAutoAck(True)
 
@@ -83,12 +83,14 @@ def transmitir_archivo(nombre):
     )
     hilo.start()
 
-    radio.write(
+    ok = radio.write(
         paquetes_binarios.serializar_start(
             tamano,
             cantidad
         ).ljust(32, b'\0')
     )
+
+    print("START:", ok)
 
     time.sleep(0.05)
 
@@ -113,10 +115,14 @@ def transmitir_archivo(nombre):
                 f"{paquete['id']}"
             )
 
-    radio.write(
+        time.sleep(0.003)
+
+    ok = radio.write(
         paquetes_binarios.serializar_end(
         ).ljust(32, b'\0')
     )
+
+    print("END:", ok)
 
     parpadeando = False
     hilo.join()
@@ -138,19 +144,20 @@ def iniciar_grabacion():
     apagar_todos()
     led_amarillo.on()
 
-    proceso_grabacion = \
-        subprocess.Popen([
-            "arecord",
-            "-D",
-            "plughw:3,0",
-            "-f",
-            "S16_LE",
-            "-r",
-            "8000",
-            "-c",
-            "1",
-            "prueba.wav"
-        ])
+    print("Grabando...")
+
+    proceso_grabacion = subprocess.Popen([
+        "arecord",
+        "-D",
+        "plughw:3,0",
+        "-f",
+        "S16_LE",
+        "-r",
+        "8000",
+        "-c",
+        "1",
+        "prueba.wav"
+    ])
 
 
 def detener_grabacion():
@@ -163,6 +170,8 @@ def detener_grabacion():
     proceso_grabacion.terminate()
     proceso_grabacion.wait()
     proceso_grabacion = None
+
+    print("Enviando audio...")
 
     transmitir_archivo(
         "prueba.wav"
