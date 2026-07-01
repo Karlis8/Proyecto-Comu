@@ -1,7 +1,7 @@
 from RF24 import *
-import time
-import os
 import struct
+import os
+import time
 
 radio = RF24(22, 0)
 
@@ -16,21 +16,20 @@ direccion = b"TX_01"
 radio.openWritingPipe(direccion)
 radio.stopListening()
 
-ARCHIVO = "audio.wav"
+archivo = "audio.wav"
 
-tamano = os.path.getsize(ARCHIVO)
+tam = os.path.getsize(archivo)
 
-print("Tamaño:", tamano)
+print("Enviando", tam, "bytes")
 
-# Paquete START
-cabecera = b"START" + struct.pack("<I", tamano)
-
+cabecera = b"START" + struct.pack("<I", tam)
 radio.write(cabecera)
+
 time.sleep(0.1)
 
-with open(ARCHIVO, "rb") as f:
+with open(archivo, "rb") as f:
 
-    numero = 0
+    secuencia = 0
 
     while True:
 
@@ -39,19 +38,19 @@ with open(ARCHIVO, "rb") as f:
         if not datos:
             break
 
-        paquete = struct.pack("<I", numero) + datos
+        paquete = struct.pack("<I", secuencia)
+        paquete += datos
 
         ok = radio.write(paquete)
 
-        if ok:
-            print("Paquete", numero, "OK")
+        if not ok:
+            print("Error paquete", secuencia)
         else:
-            print("Paquete", numero, "FALLO")
+            print("Paquete", secuencia)
 
-        numero += 1
-
+        secuencia += 1
         time.sleep(0.005)
 
 radio.write(b"END")
 
-print("Archivo enviado.")
+print("Transmisión terminada")
