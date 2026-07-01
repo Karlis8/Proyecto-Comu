@@ -23,7 +23,7 @@ GPIO.setup(
     GPIO.OUT
 )
 
-radio = RF24(17, 8)
+radio = RF24(25, 0)
 
 if not radio.begin():
     raise RuntimeError(
@@ -31,7 +31,7 @@ if not radio.begin():
     )
 
 radio.setChannel(76)
-radio.setDataRate(RF24_1MBPS)
+radio.setDataRate(RF24_250KBPS)
 radio.setPALevel(RF24_PA_HIGH)
 radio.setAutoAck(True)
 
@@ -106,9 +106,13 @@ try:
                 )
 
                 print(
-                    f"Recibiendo "
-                    f"{cantidad_esperada} "
-                    f" paquetes"
+                    f"Tamaño: "
+                    f"{tamano_archivo}"
+                )
+
+                print(
+                    f"Paquetes esperados: "
+                    f"{cantidad_esperada}"
                 )
 
             elif tipo == \
@@ -124,6 +128,12 @@ try:
                     paquete
                 )
 
+                if len(paquetes) % 100 == 0:
+                    print(
+                        f"Recibidos "
+                        f"{len(paquetes)}"
+                    )
+
             elif tipo == \
                     paquetes_binarios.TIPO_END \
                     and recolectando:
@@ -133,6 +143,11 @@ try:
                 GPIO.output(
                     LED_AMARILLO,
                     GPIO.LOW
+                )
+
+                print(
+                    f"Paquetes recibidos: "
+                    f"{len(paquetes)}"
                 )
 
                 if len(paquetes) != \
