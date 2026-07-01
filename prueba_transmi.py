@@ -1,7 +1,14 @@
 from RF24 import *
+from gpiozero import Button
+import subprocess
 import struct
 import os
 import time
+
+BOTON = 27
+ARCHIVO = "audio.wav"
+
+boton = Button(BOTON)
 
 radio = RF24(22, 0)
 
@@ -16,41 +23,71 @@ direccion = b"TX_01"
 radio.openWritingPipe(direccion)
 radio.stopListening()
 
-archivo = "audio.wav"
 
-tam = os.path.getsize(archivo)
+def transmitir_archivo(nombre):
 
-print("Enviando", tam, "bytes")
+    tam = os.path.getsize(nombre)
 
-cabecera = b"START" + struct.pack("<I", tam)
-radio.write(cabecera)
+    print("Enviando", tam, "bytes")
 
-time.sleep(0.1)
+    cabecera = b"START" + struct.pack("<I", tam)
+    radio.write(cabecera)
 
-with open(archivo, "rb") as f:
+    time.sleep(0.1)
 
-    secuencia = 0
+    with open(nombre, "rb") as f:
 
-    while True:
+        secuencia = 0
 
-        datos = f.read(28)
+        while True:
 
-        if not datos:
-            break
+            datos = f.read(27)
 
-        paquete = struct.pack("<I", secuencia)
-        paquete += datos
+            if not datos:
+                break
 
-        ok = radio.write(paquete)
+            paquete = struct.pack(
+                "<IB",
+                secuencia,
+                len(datos)
+            )
 
-        if not ok:
-            print("Error paquete", secuencia)
-        else:
-            print("Paquete", secuencia)
+            paquete += datos
 
-        secuencia += 1
-        time.sleep(0.005)
+            ok = radio.write(paquete)
 
-radio.write(b"END")
+            if not ok:
+                print("Error paquete", secuencia)
 
-print("Transmisión terminada")
+            secuencia += 1
+            time.sleep(0.005)
+
+    radio.write(b"END")
+
+    print("Transmisión terminada")
+
+
+print("Esperando botón...")
+
+while True:
+
+    boton.wait_for_press()
+
+    print("Grabando...")
+
+    subprocess.run([
+        "arecord",
+        "-f", "S16_LE",
+        "-c", "1",
+        "-r", "8000",
+        "-d", "5",
+        ARCHIVO
+    ])
+
+    print("Audio grabado")
+
+    transmitir_archivo(ARCHIVO)
+
+    print("Listo\n")
+
+    time.sleep(1)
