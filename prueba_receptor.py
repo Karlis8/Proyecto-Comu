@@ -14,11 +14,11 @@ direccion = b"TX_01"
 radio.openReadingPipe(1, direccion)
 radio.startListening()
 
-print("Esperando archivo...")
-
 archivo = None
-tamano_esperado = 0
+tam_esperado = 0
 bytes_recibidos = 0
+
+print("Esperando archivo...")
 
 while True:
 
@@ -29,12 +29,12 @@ while True:
 
         if datos.startswith(b"START"):
 
-            tamano_esperado = struct.unpack(
+            tam_esperado = struct.unpack(
                 "<I",
                 datos[5:9]
             )[0]
 
-            print("Tamaño esperado:", tamano_esperado)
+            print("Tamaño:", tam_esperado)
 
             archivo = open(
                 "audio_recibido.wav",
@@ -42,7 +42,6 @@ while True:
             )
 
             bytes_recibidos = 0
-
             continue
 
         if datos == b"END":
@@ -50,11 +49,12 @@ while True:
             if archivo:
                 archivo.close()
 
-            print("Archivo recibido.")
+            print("Archivo completo")
             print(
-                "Bytes:",
+                "Recibidos:",
                 bytes_recibidos
             )
+
             break
 
         if archivo:
@@ -72,6 +72,5 @@ while True:
 
             print(
                 "Paquete",
-                numero,
-                "recibido"
+                numero
             )
