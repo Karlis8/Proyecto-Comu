@@ -1,5 +1,6 @@
 from RF24 import *
 import struct
+import subprocess
 
 radio = RF24(25, 0)
 
@@ -15,62 +16,57 @@ radio.openReadingPipe(1, direccion)
 radio.startListening()
 
 archivo = None
-tam_esperado = 0
-bytes_recibidos = 0
 
-print("Esperando archivo...")
+print("Esperando audio...")
 
 while True:
 
     if radio.available():
 
         datos = bytes(radio.read(32))
-       
 
         if datos.startswith(b"START"):
 
-            tam_esperado = struct.unpack(
+            tam = struct.unpack(
                 "<I",
                 datos[5:9]
             )[0]
 
-            print("Tamaño:", tam_esperado)
+            print("Recibiendo", tam, "bytes")
 
             archivo = open(
                 "audio_recibido.wav",
                 "wb"
             )
 
-            bytes_recibidos = 0
             continue
 
-        if datos == b"END":
+        if datos[:3] == b"END":
 
             if archivo:
                 archivo.close()
 
-            print("Archivo completo")
-            print(
-                "Recibidos:",
-                bytes_recibidos
-            )
+            print("Audio recibido")
 
-            break
+            subprocess.run([
+                "aplay",
+                "audio_recibido.wav"
+            ])
+
+            print("Reproducción terminada")
+
+            continue
 
         if archivo:
 
-            numero = struct.unpack(
-                "<I",
-                datos[:4]
-            )[0]
+            if len(datos) < 5:
+                continue
 
-            payload = datos[4:]
+            secuencia, longitud = struct.unpack(
+                "<IB",
+                datos[:5]
+            )
+
+            payload = datos[5:5+longitud]
 
             archivo.write(payload)
-
-            bytes_recibidos += len(payload)
-
-            print(
-                "Paquete",
-                numero
-            )
